@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prediction Market Making Simulation - Accurate Math</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #262626 100%);
+            color: #ffffff;
+            line-height: 1.5;
+            overflow-x: hidden;
+            position: relative;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            -webkit-text-size-adjust: 100%;
+            transform: translateZ(0);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(20, 184, 166, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.02) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 100vh;
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1600px) {
+            .container {
+                gap: 18px;
+                padding: 18px;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr 390px;
+                gap: 18px;
+            }
+        }
+        
+        @media (max-width: 1400px) {
+            .container {
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr 360px;
+                gap: 16px;
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            .container {
+                gap: 16px;
+                max-width: 900px;
+            }
+            
+            .content-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        /* iPhone 12-15 Optimization (390px width) */
+        @media (max-width: 768px) and (min-width: 431px) {
+            .container {
+                padding: 16px;
+                gap: 16px;
+                padding-bottom: env(safe-area-inset-bottom, 16px);
+            }
+            
+            .header {
+                padding: 20px;
+                border-radius: 12px;
+            }
+            
+            .main-content {
+                padding: 20px;
+                border-radius: 12px;
+            }
+            
+            .panel {
+                padding: 18px;
+                border-radius: 10px;
+            }
+            
+            .game-title {
+                font-size: 20px;
+                margin-bottom: 14px;
+                line-height: 1.3;
+            }
+            
+            .team-score {
+                font-size: 15px;
+                padding: 12px 14px;
+                min-width: 110px;
+                border-radius: 8px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            
+            .scoreboard {
+                gap: 14px;
+                padding: 16px;
+                margin: 14px 0;
+            }
+            
+            .vs-text {
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            .price-chart {
+                height: 180px;
+                margin: 24px 0;
+                border-radius: 10px;
+            }
+            
+            .orderbook-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+                margin-bottom: 24px;
+            }
+            
+            .market-info {
+                font-size: 20px;
+                font-weight: 800;
+            }
+            
+            .price-info {
+                font-size: 14px;
+                gap: 16px;
+                font-weight: 600;
+            }
+            
+            .sidebar {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .book-row {
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 6px;
+                font-weight: 600;
+            }
+            
+            .side-header {
+                padding: 10px 16px;
+                font-size: 12px;
+                font-weight: 800;
+            }
+            
+            .metric-row {
+                padding: 10px 0;
+                font-size: 14px;
+            }
+            
+            .metric-label {
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            .metric-value {
+                font-size: 14px;
+                font-weight: 800;
+            }
+            
+            .panel-header {
+                font-size: 17px;
+                margin-bottom: 18px;
+                font-weight: 800;
+            }
+            
+            .activity-log {
+                max-height: 250px;
+                padding: 16px;
+                border-radius: 8px;
+            }
+            
+            .activity-item {
+                font-size: 12px;
+                padding: 8px 0;
+                line-height: 1.4;
+            }
+            
+            .activity-time {
+                font-size: 11px;
+            }
+            
+            .spread-indicator {
+                padding: 16px;
+                font-size: 16px;
+                font-weight: 700;
+                margin: 16px 0;
+            }
+            
+            .delta-status {
+                padding: 16px;
+                font-size: 15px;
+                font-weight: 800;
+                margin: 16px 0;
+            }
+            
+            .inventory-warning,
+            .adverse-warning {
+                padding: 16px;
+                font-size: 14px;
+                font-weight: 700;
+                border-radius: 8px;
+            }
+        }
+
+        /* iPhone 15 and similar devices (393px) */
+        @media (max-width: 430px) {
+            .container {
+                padding: 12px;
+                gap: 12px;
+            }
+            
+            .game-title {
+                font-size: 19px;
+                margin-bottom: 12px;
+            }
+            
+            .team-score {
+                font-size: 14px;
+                padding: 10px 12px;
+                min-width: 100px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            
+            .scoreboard {
+                gap: 12px;
+                padding: 14px;
+                margin: 12px 0;
+            }
+            
+            .vs-text {
+                font-size: 12px;
+                font-weight: 500;
+            }
+            
+            .controls {
+                gap: 6px;
+                flex-wrap: nowrap;
+                justify-content: space-between;
+            }
+            
+            .control-btn {
+                padding: 14px 16px;
+                font-size: 14px;
+                min-width: 70px;
+                flex: 1;
+                max-width: none;
+                font-weight: 600;
+            }
+            
+            .price-chart {
+                height: 160px;
+            }
+            
+            .panel {
+                padding: 16px;
+            }
+            
+            .book-row {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            
+            .side-header {
+                padding: 8px 14px;
+                font-size: 11px;
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.02),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .header-content {
+            grid-column: 1 / -1;
+        }
+        
+        @media (max-width: 1600px) {
+            .header {
+                padding: 22px;
+                grid-template-columns: 1fr 390px;
+                gap: 18px;
+            }
+        }
+        
+        @media (max-width: 1400px) {
+            .header {
+                padding: 20px;
+                grid-template-columns: 1fr 360px;
+                gap: 16px;
+            }
+            
+            .game-title {
+                font-size: 26px;
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            .header {
+                padding: 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .game-title {
+                font-size: 22px;
+            }
+            
+            .scoreboard {
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            
+            .team-score {
+                font-size: 18px;
+            }
+        }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 50%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(20, 184, 166, 0.2);
+            letter-spacing: -0.3px;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            margin: 18px 0;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .team-score {
+            font-size: 20px;
+            font-weight: 600;
+            padding: 12px 18px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .team-score:first-child {
+            color: #3b82f6;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .team-score:last-child {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .winning-team {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+            color: #10b981 !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+            font-weight: 700;
+        }
+
+        .vs-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            min-height: 48px;
+            min-width: 48px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.3px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+        }
+
+        @media (max-width: 768px) and (min-width: 431px) {
+            .control-btn {
+                padding: 16px 20px;
+                font-size: 15px;
+                min-height: 48px;
+                border-radius: 10px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                flex: 1;
+            }
+            
+            .controls {
+                gap: 8px;
+                flex-wrap: nowrap;
+                justify-content: space-between;
+            }
+            
+            .control-btn:hover {
+                transform: none;
+            }
+            
+            .control-btn:active {
+                transform: scale(0.98);
+                background: linear-gradient(135deg, #4b5563, #6b7280);
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #14b8a6, #0ea5e9);
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .game-status {
+            text-align: center;
+            font-size: 13px;
+            color: #9ca3af;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        .main-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #262626 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.02),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+        }
+        
+        @media (max-width: 1600px) {
+            .main-content {
+                padding: 22px;
+            }
+        }
+        
+        @media (max-width: 1400px) {
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        .orderbook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .market-info {
+            font-size: 18px;
+            font-weight: 700;
+            color: #14b8a6;
+            letter-spacing: -0.2px;
+        }
+
+        .price-info {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .price-chart {
+            height: 160px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(26, 26, 26, 0.4) 100%);
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid rgba(20, 184, 166, 0.15);
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .chart-line {
+            stroke: url(#priceGradient);
+            stroke-width: 2.5;
+            fill: none;
+            filter: drop-shadow(0 0 6px rgba(20, 184, 166, 0.4));
+        }
+
+        .orderbook-section {
+            margin: 20px 0;
+        }
+
+        .orderbook-side {
+            margin: 8px 0;
+        }
+
+        .side-header {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+        }
+
+        .ask-header {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .bid-header {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        .book-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 16px;
+            margin: 2px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Monaco', 'Menlo', 'SF Mono', monospace;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            font-weight: 500;
+        }
+
+        .book-row::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: width 0.3s ease;
+        }
+
+        .book-row:hover::before {
+            width: 100%;
+        }
+
+        .ask-row {
+            background: rgba(239, 68, 68, 0.06);
+            border-left: 2px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .ask-row:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .bid-row {
+            background: rgba(16, 185, 129, 0.06);
+            border-left: 2px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .bid-row:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .our-order {
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.08) 100%) !important;
+            border-left: 3px solid #0ea5e9 !important;
+            font-weight: 700;
+            position: relative;
+            box-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
+        }
+        
+        .our-order::before {
+            content: "MM";
+            position: absolute;
+            left: -1px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #0ea5e9;
+            color: white;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 4px;
+            border-radius: 3px;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+        
+        .our-order::after {
+            content: "";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 5px;
+            background: #0ea5e9;
+            border-radius: 50%;
+            box-shadow: 0 0 4px rgba(14, 165, 233, 0.6);
+        }
+
+        .picked-off {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
+            border-left: 3px solid #ef4444 !important;
+            animation: pickedOffFlash 1.5s ease-out;
+        }
+
+        .filled-order {
+            animation: fillPulse 1s ease-out;
+        }
+
+        @keyframes fillPulse {
+            0% { 
+                background: rgba(14, 165, 233, 0.4) !important;
+                transform: scale(1.02);
+                box-shadow: 0 0 16px rgba(14, 165, 233, 0.3);
+            }
+            50% {
+                background: rgba(14, 165, 233, 0.25) !important;
+                transform: scale(1.01);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: none;
+            }
+        }
+
+        @keyframes pickedOffFlash {
+            0% { 
+                background: rgba(239, 68, 68, 0.5) !important;
+                transform: scale(1.02);
+                box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: none;
+            }
+        }
+
+        .spread-indicator {
+            text-align: center;
+            padding: 12px;
+            margin: 12px 0;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: linear-gradient(135deg, #1a1a1a 0%, #262626 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 
+                0 4px 24px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.02),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 6px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        
+        @media (max-width: 1600px) {
+            .panel {
+                padding: 18px;
+            }
+        }
+        
+        @media (max-width: 1400px) {
+            .panel {
+                padding: 16px;
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            .panel {
+                padding: 18px;
+                min-height: auto;
+            }
+            
+            .panel:hover {
+                transform: none;
+            }
+        }
+
+        .panel-header {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #14b8a6;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 8px;
+            letter-spacing: -0.1px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 13px;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-family: 'Monaco', 'Menlo', 'SF Mono', monospace;
+            font-size: 12px;
+        }
+
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .neutral { color: #0ea5e9; }
+
+        .delta-status {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            margin: 12px 0;
+            border: 2px solid;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+        }
+
+        .delta-neutral {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: #10b981;
+            color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.1);
+        }
+
+        .delta-risk {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: #f59e0b;
+            color: #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.1);
+        }
+
+        .delta-danger {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
+            animation: dangerPulse 2s infinite;
+        }
+
+        @keyframes dangerPulse {
+            0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.1); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+        }
+
+        .activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .activity-item {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 11px;
+            font-family: 'Monaco', 'Menlo', 'SF Mono', monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-time {
+            color: #6b7280;
+            font-size: 10px;
+        }
+
+        .buy-action { color: #10b981; }
+        .sell-action { color: #ef4444; }
+        .rebalance-action { color: #f59e0b; }
+        .game-action { color: #0ea5e9; }
+        .adverse-action { color: #ef4444; font-weight: 700; }
+        .failed-action { color: #ef4444; }
+
+        .activity-log::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .activity-log::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .activity-log::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .activity-log::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-indicator {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .inventory-indicator {
+            background: rgba(75, 85, 99, 0.05);
+            border-left-color: rgba(156, 163, 175, 0.3);
+            color: #6b7280;
+        }
+        
+        .inventory-indicator.active {
+            background: rgba(245, 158, 11, 0.08);
+            border-left-color: #f59e0b;
+            color: #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.1);
+        }
+        
+        .adverse-indicator {
+            background: rgba(75, 85, 99, 0.05);
+            border-left-color: rgba(156, 163, 175, 0.3);
+            color: #6b7280;
+        }
+        
+        .adverse-indicator.active {
+            background: rgba(239, 68, 68, 0.08);
+            border-left-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+            animation: warningPulse 1.5s infinite;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.1); }
+            50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="game-title">⚾ Prediction Market Making Simulation</div>
+                <div class="scoreboard">
+                    <div class="team-score" id="yankeesScore">Yankees 0</div>
+                    <div class="vs-text">VS</div>
+                    <div class="team-score" id="redSoxScore">Red Sox 0</div>
+                </div>
+                <div class="controls">
+                    <a href="javascript:void(0)" class="control-btn" onclick="startSimulation(); return false;">▶️ Start</a>
+                    <a href="javascript:void(0)" class="control-btn" onclick="pauseSimulation(); return false;">⏸️ Pause</a>
+                    <a href="javascript:void(0)" class="control-btn" onclick="resetSimulation(); return false;">🔄 Reset</a>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="gameProgress"></div>
+                </div>
+                <div class="game-status" id="gameStatus">Pre-game: Yankees favored 58% • Professional trading mode active</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="main-content">
+            <div class="orderbook-header">
+                <div class="market-info">Yankees Win Market</div>
+                <div class="price-info">
+                    <span>Mid: <span id="midPrice">58.0¢</span></span>
+                    <span>Spread: <span id="currentSpread">1.0¢</span></span>
+                </div>
+            </div>
+
+            <div class="price-chart">
+                <svg width="100%" height="100%" id="chartSvg"></svg>
+            </div>
+
+            <div class="orderbook-section">
+                <div class="orderbook-side">
+                    <div class="side-header ask-header">
+                        <span>ASK (Sell)</span>
+                        <span>Size</span>
+                    </div>
+                    <div id="askBook"></div>
+                </div>
+
+                <div class="spread-indicator">
+                    <span style="color: #9ca3af;">Market Spread:</span> 
+                    <span id="spreadDisplay" style="color: #14b8a6;">1.0¢</span>
+                </div>
+
+                <div class="orderbook-side">
+                    <div class="side-header bid-header">
+                        <span>BID (Buy)</span>
+                        <span>Size</span>
+                    </div>
+                    <div id="bidBook"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-header">📊 Position Summary</div>
+                <div class="delta-status" id="deltaStatus">DELTA NEUTRAL ✅</div>
+                <div id="inventoryRisk" class="status-indicator inventory-indicator">
+                    <span id="inventoryText">📊 Inventory balanced</span>
+                </div>
+                <div id="adverseSelection" class="status-indicator adverse-indicator">
+                    <span id="adverseText">✅ Market conditions normal</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">YES Shares</span>
+                    <span class="metric-value" id="yesShares">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">NO Shares</span>
+                    <span class="metric-value" id="noShares">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Cash Position</span>
+                    <span class="metric-value" id="cashPosition">$0.00</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Queue Position</span>
+                    <span class="metric-value" id="queuePosition">Top of book</span>
+                </div>
+                <div style="margin: 16px 0; padding: 16px; background: rgba(16, 185, 129, 0.06); border-radius: 8px; border: 2px solid rgba(16, 185, 129, 0.2);">
+                    <div style="font-size: 13px; color: #10b981; margin-bottom: 12px; font-weight: 700;">🎯 DELTA-NEUTRAL VERIFICATION:</div>
+                    <div style="font-size: 11px; color: #9ca3af; margin-bottom: 8px; line-height: 1.4;">Both scenarios should yield identical payouts:</div>
+                    <div class="metric-row" style="border: none; padding: 4px 0; background: rgba(59, 130, 246, 0.04); border-radius: 4px; margin: 2px 0;">
+                        <span class="metric-label" style="font-size: 12px; font-weight: 600;">Yankees Win:</span>
+                        <span class="metric-value" id="yankeeWinScenario" style="font-size: 12px; font-weight: 700;">$0.00</span>
+                    </div>
+                    <div class="metric-row" style="border: none; padding: 4px 0; background: rgba(239, 68, 68, 0.04); border-radius: 4px; margin: 2px 0;">
+                        <span class="metric-label" style="font-size: 12px; font-weight: 600;">Red Sox Win:</span>
+                        <span class="metric-value" id="redSoxWinScenario" style="font-size: 12px; font-weight: 700;">$0.00</span>
+                    </div>
+                    <div id="deltaProofStatus" style="font-size: 10px; margin-top: 8px; text-align: center; font-weight: 600;"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">💰 P&L Tracking</div>
+                <div class="metric-row">
+                    <span class="metric-label">Completed Rounds</span>
+                    <span class="metric-value" id="totalRounds">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Trading P&L (Cash)</span>
+                    <span class="metric-value positive" id="tradingPnL">$0.00</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Mark-to-Market</span>
+                    <span class="metric-value" id="markToMarket">$0.00</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Unrealized P&L</span>
+                    <span class="metric-value" id="unrealizedPnL">$0.00</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Total P&L</span>
+                    <span class="metric-value" id="totalPnL">$0.00</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Game Phase</span>
+                    <span class="metric-value" id="currentInning">Pre-Game</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">📋 Activity Log</div>
+                <div class="activity-log" id="activityLog">
+                    <div class="activity-item">
+                        <span>🏟️ Professional trading session initiated</span>
+                        <span class="activity-time">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        class TrueMarketMakerDynamics {
+            constructor() {
+                this.isRunning = false;
+                this.gameTime = 0;
+                this.startTime = Date.now();
+                
+                // Game state
+                this.yankeesScore = 0;
+                this.redSoxScore = 0;
+                this.gamePhase = 'pregame';
+                
+                // Market state
+                this.yesPrice = 0.58;
+                this.noPrice = 0.42;
+                this.spread = 0.010;
+                this.lastPriceMove = 0;
+                this.priceVelocity = 0;
+                
+                // CRITICAL: Add cash position tracking
+                this.cashPosition = 0; // Track net cash flow from trades
+                
+                // Strategy state
+                this.yesShares = 0;
+                this.noShares = 0;
+                this.totalRounds = 0;
+                
+                // Market making orders with queue position
+                this.ourOrders = {
+                    yesBids: [],
+                    yesAsks: [],
+                    noBids: [],
+                    noAsks: []
+                };
+                
+                // Market dynamics tracking
+                this.queuePosition = 1; // Position in order queue
+                this.lastPriceDirection = 0; // Track price momentum
+                this.inventoryRiskPeriod = false;
+                this.adverseSelectionActive = false;
+                
+                // Tracking
+                this.priceHistory = [{ time: 0, price: 0.58 }];
+                this.activityLog = [];
+                this.orderBook = { bids: [], asks: [] };
+                
+                // Realistic baseball game events
+                this.gameEvents = [
+                    { time: 0.04, phase: 'early', inning: '1st', event: "⚾ Game starts! Heavy pre-game action", score: [0, 0], volumeSpike: 1.2 },
+                    { time: 0.08, event: "🔥 RED SOX 2-RUN HOMER!", score: [0, 2], priceMove: -0.08, inning: '1st', volumeSpike: 1.8 },
+                    { time: 0.14, event: "Red Sox add another run", score: [0, 3], priceMove: -0.04, inning: '2nd', volumeSpike: 1.4 },
+                    { time: 0.20, event: "Yankees get on the board", score: [1, 3], priceMove: 0.02, inning: '3rd', volumeSpike: 1.3 },
+                    { time: 0.28, event: "🚀 YANKEES 3-RUN RALLY! Take lead!", score: [4, 3], priceMove: 0.12, inning: '4th', volumeSpike: 2.1 },
+                    { time: 0.35, phase: 'midgame', event: "🔥 RED SOX TIE IT UP!", score: [4, 4], priceMove: -0.06, inning: '5th', volumeSpike: 1.7 },
+                    { time: 0.42, event: "Yankees retake lead by one", score: [5, 4], priceMove: 0.04, inning: '6th', volumeSpike: 1.5 },
+                    { time: 0.48, event: "🔥 RED SOX 2-RUN INNING! Lead 6-5", score: [5, 6], priceMove: -0.08, inning: '6th', volumeSpike: 1.9 },
+                    { time: 0.55, event: "Red Sox add insurance run", score: [5, 7], priceMove: -0.06, inning: '7th', volumeSpike: 1.6 },
+                    { time: 0.62, event: "Red Sox now clearly favored, 7-5 lead", priceMove: -0.03, inning: '7th', volumeSpike: 1.3 },
+                    { time: 0.68, phase: 'late', event: "Yankees desperate, down by 2", priceMove: 0.01, inning: '8th', volumeSpike: 1.2 },
+                    { time: 0.74, event: "🚀 YANKEES RALLY! Tie game 7-7!", score: [7, 7], priceMove: 0.10, inning: '8th', volumeSpike: 2.2 },
+                    { time: 0.80, event: "Extra innings looking likely", priceMove: 0.01, inning: '9th', volumeSpike: 1.4 },
+                    { time: 0.86, event: "🚀 YANKEES WALKOFF 2-RUN HIT!", score: [9, 7], priceMove: 0.18, inning: '9th', volumeSpike: 2.5 },
+                    { time: 0.92, event: "Yankees celebrating walkoff win", priceMove: 0.05, inning: '9th', volumeSpike: 1.8 },
+                    { time: 0.97, phase: 'final', event: "🏆 YANKEES WIN 9-7 WALKOFF!", score: [9, 7], priceMove: 0.08, inning: 'Final' }
+                ];
+                this.nextEventIndex = 0;
+                
+                this.initializeOrderBook();
+                this.logActivity('🏟️ Professional trading session initiated', 'game');
+            }
+            
+            initializeOrderBook() {
+                this.orderBook.bids = [];
+                this.orderBook.asks = [];
+                
+                for (let i = 0; i < 6; i++) {
+                    const bidPrice = this.yesPrice - (i + 1) * 0.001;
+                    const askPrice = this.yesPrice + (i + 1) * 0.001;
+                    const size = Math.floor(300 * Math.exp(-i * 0.4) + Math.random() * 100);
+                    
+                    this.orderBook.bids.push({ 
+                        price: Math.max(0.001, bidPrice), 
+                        size, 
+                        isOurs: false,
+                        filled: false,
+                        pickedOff: false
+                    });
+                    this.orderBook.asks.push({ 
+                        price: Math.min(0.999, askPrice), 
+                        size, 
+                        isOurs: false,
+                        filled: false,
+                        pickedOff: false
+                    });
+                }
+            }
+            
+            updateGame() {
+                this.processGameEvents();
+                this.updateMarketConditions();
+                this.detectAdverseSelection();
+                this.executeStrategy();
+                this.updateAllDisplays();
+            }
+            
+            processGameEvents() {
+                while (this.nextEventIndex < this.gameEvents.length && 
+                       this.gameTime >= this.gameEvents[this.nextEventIndex].time) {
+                    
+                    const event = this.gameEvents[this.nextEventIndex];
+                    
+                    if (event.score) {
+                        this.yankeesScore = event.score[0];
+                        this.redSoxScore = event.score[1];
+                    }
+                    
+                    if (event.phase) {
+                        this.gamePhase = event.phase;
+                    }
+                    
+                    if (event.priceMove) {
+                        this.lastPriceMove = event.priceMove;
+                        this.priceVelocity = Math.abs(event.priceMove);
+                        this.yesPrice += event.priceMove;
+                        this.yesPrice = Math.max(0.01, Math.min(0.99, this.yesPrice));
+                        this.noPrice = 1 - this.yesPrice;
+                        
+                        // Track price direction for adverse selection
+                        this.lastPriceDirection = event.priceMove > 0 ? 1 : -1;
+                    }
+                    
+                    this.logActivity(event.event, 'game');
+                    this.nextEventIndex++;
+                }
+                
+                // End game resolution
+                if (this.gameTime > 0.95 && this.gamePhase === 'final') {
+                    const targetPrice = this.yankeesScore > this.redSoxScore ? 0.99 : 0.01;
+                    this.yesPrice += (targetPrice - this.yesPrice) * 0.15;
+                }
+            }
+            
+            detectAdverseSelection() {
+                if (this.priceVelocity > 0.05) {
+                    this.adverseSelectionActive = true;
+                    this.checkForPickedOffOrders();
+                    
+                    setTimeout(() => {
+                        this.adverseSelectionActive = false;
+                    }, 3000);
+                } else {
+                    this.adverseSelectionActive = false;
+                }
+            }
+            
+            // FIXED: Adverse selection calculation with actual price differences
+            checkForPickedOffOrders() {
+                const pickOffProbability = Math.min(0.4, this.priceVelocity * 5);
+                
+                if (Math.random() < pickOffProbability) {
+                    const pickOffSize = 2 + Math.floor(Math.random() * 3);
+                    
+                    if (this.lastPriceDirection > 0) {
+                        // Price went up - we bought before the rally (actually good for us, but record as pre-rally trade)
+                        this.yesShares += pickOffSize;
+                        this.cashPosition -= pickOffSize * (this.yesPrice - this.priceVelocity); // We bought before spike
+                        this.logActivity(`⚠️ Bought ${pickOffSize} YES @ ${((this.yesPrice - this.priceVelocity)*100).toFixed(1)}¢ before rally`, 'adverse');
+                    } else {
+                        // Price went down - we sold before the drop (also good, but record as pre-drop trade)
+                        this.yesShares -= pickOffSize;
+                        this.cashPosition += pickOffSize * (this.yesPrice + Math.abs(this.priceVelocity)); // We sold before drop
+                        this.logActivity(`🚨 Sold ${pickOffSize} YES @ ${((this.yesPrice + Math.abs(this.priceVelocity))*100).toFixed(1)}¢ before drop`, 'adverse');
+                    }
+                    
+                    this.showAdverseSelectionInBook(this.lastPriceDirection > 0 ? 'bid' : 'ask');
+                }
+            }
+            
+            showAdverseSelectionInBook(side) {
+                if (side === 'bid') {
+                    this.orderBook.bids[0].pickedOff = true;
+                    setTimeout(() => this.orderBook.bids[0].pickedOff = false, 2000);
+                } else {
+                    this.orderBook.asks[0].pickedOff = true;
+                    setTimeout(() => this.orderBook.asks[0].pickedOff = false, 2000);
+                }
+            }
+            
+            updateMarketConditions() {
+                this.priceVelocity *= 0.9;
+                
+                if (this.gamePhase === 'pregame') {
+                    this.yesPrice += (Math.random() - 0.5) * 0.0001;
+                } else if (this.gamePhase === 'early') {
+                    this.yesPrice += (Math.random() - 0.5) * 0.0003;
+                } else if (this.gamePhase === 'midgame') {
+                    this.yesPrice += (Math.random() - 0.5) * 0.0005;
+                } else if (this.gamePhase === 'late') {
+                    this.yesPrice += (Math.random() - 0.5) * 0.0008;
+                }
+                
+                this.updateSpreadBasedOnConditions();
+                
+                this.yesPrice = Math.max(0.01, Math.min(0.99, this.yesPrice));
+                this.noPrice = 1 - this.yesPrice;
+                
+                this.priceHistory.push({ time: this.gameTime, price: this.yesPrice });
+                // Keep full history for complete chart display
+                if (this.priceHistory.length > 500) this.priceHistory.shift();
+                
+                this.updateOrderBookPrices();
+                this.updateQueuePosition();
+            }
+            
+            updateQueuePosition() {
+                if (Math.random() < 0.1) {
+                    this.queuePosition = Math.max(1, this.queuePosition + (Math.random() < 0.5 ? -1 : 1));
+                    if (this.queuePosition > 3) this.queuePosition = 1;
+                }
+            }
+            
+            updateSpreadBasedOnConditions() {
+                let targetSpread = 0.010;
+                
+                const currentEvent = this.gameEvents[Math.max(0, this.nextEventIndex - 1)];
+                const volume = currentEvent?.volumeSpike || 1.0;
+                
+                if (this.adverseSelectionActive) {
+                    targetSpread *= 1.5;
+                }
+                
+                if (volume > 2.5) {
+                    targetSpread = 0.008;
+                } else if (volume > 2.0) {
+                    targetSpread = 0.009;
+                } else if (volume < 1.2) {
+                    targetSpread = 0.015;
+                }
+                
+                if (volume > 2.2) {
+                    targetSpread = Math.max(targetSpread, 0.020);
+                }
+                
+                const scoreDiff = Math.abs(this.yankeesScore - this.redSoxScore);
+                if (this.gamePhase === 'late' && scoreDiff <= 2) {
+                    targetSpread = Math.max(targetSpread, 0.025);
+                }
+                
+                if (this.yesPrice > 0.90 || this.yesPrice < 0.10) {
+                    targetSpread *= 2.0;
+                } else if (this.yesPrice > 0.80 || this.yesPrice < 0.20) {
+                    targetSpread *= 1.5;
+                }
+                
+                this.spread += (targetSpread - this.spread) * 0.2;
+            }
+            
+            updateOrderBookPrices() {
+                const halfSpread = this.spread / 2;
+                const tickSize = Math.max(0.001, this.spread / 4);
+                
+                for (let i = 0; i < this.orderBook.bids.length; i++) {
+                    this.orderBook.bids[i].price = Math.max(0.001, this.yesPrice - halfSpread - (i * tickSize));
+                    this.orderBook.asks[i].price = Math.min(0.999, this.yesPrice + halfSpread + (i * tickSize));
+                    this.orderBook.bids[i].isOurs = false;
+                    this.orderBook.asks[i].isOurs = false;
+                    this.orderBook.bids[i].filled = false;
+                    this.orderBook.asks[i].filled = false;
+                }
+            }
+            
+            executeStrategy() {
+                this.placeMakerQuotes();
+                this.checkForFills();
+                this.attemptRebalancing();
+                this.checkInventoryRisk();
+                this.manageInventory();
+            }
+            
+            checkInventoryRisk() {
+                const shareImbalance = Math.abs(this.yesShares - this.noShares);
+                this.inventoryRiskPeriod = shareImbalance > 8;
+            }
+            
+            // FIXED: Inventory management - place maker orders only
+            manageInventory() {
+                const MAX_INVENTORY = 15;
+                const SELL_THRESHOLD = 10;
+                
+                // Place aggressive asks to reduce inventory (but still maker orders)
+                if (this.yesShares > SELL_THRESHOLD) {
+                    const sellSize = Math.min(3, this.yesShares - SELL_THRESHOLD);
+                    const halfSpread = this.spread / 2;
+                    // Place ask slightly inside normal spread to increase fill probability
+                    const aggressiveAskPrice = this.yesPrice + halfSpread - 0.003;
+                    
+                    if (Math.random() < 0.7) {
+                        this.placeOrder('yesAsk', Math.max(0.001, aggressiveAskPrice), sellSize);
+                        this.logActivity(`📉 INVENTORY: Added aggressive YES ask ${sellSize} @ ${(aggressiveAskPrice*100).toFixed(1)}¢`, 'rebalance');
+                    }
+                }
+                
+                if (this.noShares > SELL_THRESHOLD) {
+                    const sellSize = Math.min(3, this.noShares - SELL_THRESHOLD);
+                    const halfSpread = this.spread / 2;
+                    // Place ask slightly inside normal spread to increase fill probability
+                    const aggressiveAskPrice = this.noPrice + halfSpread - 0.003;
+                    
+                    if (Math.random() < 0.7) {
+                        this.placeOrder('noAsk', Math.max(0.001, aggressiveAskPrice), sellSize);
+                        this.logActivity(`📉 INVENTORY: Added aggressive NO ask ${sellSize} @ ${(aggressiveAskPrice*100).toFixed(1)}¢`, 'rebalance');
+                    }
+                }
+                
+                // Risk rebalancing - place very aggressive asks but still maker orders
+                if (this.yesShares > MAX_INVENTORY) {
+                    const dumpSize = Math.min(5, this.yesShares - MAX_INVENTORY);
+                    const emergencyPrice = this.yesPrice + 0.001; // Just above bid
+                    this.placeOrder('yesAsk', emergencyPrice, dumpSize);
+                    this.logActivity(`⚠️ RISK REBALANCING: YES ask ${dumpSize} @ ${(emergencyPrice*100).toFixed(1)}¢`, 'adverse');
+                }
+                
+                if (this.noShares > MAX_INVENTORY) {
+                    const dumpSize = Math.min(5, this.noShares - MAX_INVENTORY);
+                    const emergencyPrice = this.noPrice + 0.001; // Just above bid
+                    this.placeOrder('noAsk', emergencyPrice, dumpSize);
+                    this.logActivity(`⚠️ RISK REBALANCING: NO ask ${dumpSize} @ ${(emergencyPrice*100).toFixed(1)}¢`, 'adverse');
+                }
+            }
+            
+            placeMakerQuotes() {
+                const halfSpread = this.spread / 2;
+                const tradeSize = 3 + Math.floor(Math.random() * 2);
+                
+                let yesBidPrice = this.yesPrice - halfSpread;
+                let yesAskPrice = this.yesPrice + halfSpread;
+                let noBidPrice = this.noPrice - halfSpread;
+                let noAskPrice = this.noPrice + halfSpread;
+                
+                if (this.adverseSelectionActive) {
+                    const adjustment = this.spread * 0.3;
+                    yesBidPrice -= adjustment;
+                    yesAskPrice += adjustment;
+                    noBidPrice -= adjustment;
+                    noAskPrice += adjustment;
+                }
+                
+                const inventoryAdjustment = 0.002;
+                if (this.yesShares > this.noShares + 5) {
+                    yesAskPrice -= inventoryAdjustment;
+                    yesBidPrice -= inventoryAdjustment;
+                } else if (this.noShares > this.yesShares + 5) {
+                    noAskPrice -= inventoryAdjustment;
+                    noBidPrice -= inventoryAdjustment;
+                }
+                
+                const competitionOffset = (this.queuePosition - 1) * 0.001 + (Math.random() < 0.3 ? (Math.random() * 0.002 - 0.001) : 0);
+                
+                this.placeOrder('yesBid', yesBidPrice + competitionOffset, tradeSize);
+                this.placeOrder('yesAsk', yesAskPrice - competitionOffset, tradeSize);
+                this.placeOrder('noBid', noBidPrice + competitionOffset, tradeSize);
+                this.placeOrder('noAsk', noAskPrice - competitionOffset, tradeSize);
+            }
+            
+            placeOrder(side, price, size) {
+                const order = {
+                    side,
+                    price,
+                    size,
+                    timestamp: Date.now()
+                };
+                
+                if (side === 'yesBid') this.ourOrders.yesBids.push(order);
+                else if (side === 'yesAsk') this.ourOrders.yesAsks.push(order);
+                else if (side === 'noBid') this.ourOrders.noBids.push(order);
+                else if (side === 'noAsk') this.ourOrders.noAsks.push(order);
+                
+                this.updateOrderBookWithOurOrders();
+            }
+            
+            checkForFills() {
+                const baseFillProb = this.getFillProbability();
+                const adjustedFillProb = baseFillProb / this.queuePosition;
+                
+                this.checkOrderFills('yesBids', adjustedFillProb * 0.4);
+                this.checkOrderFills('yesAsks', adjustedFillProb * 0.4);
+                this.checkOrderFills('noBids', adjustedFillProb * 0.3);
+                this.checkOrderFills('noAsks', adjustedFillProb * 0.3);
+            }
+            
+            checkOrderFills(orderType, fillProb) {
+                const orders = this.ourOrders[orderType];
+                
+                for (let i = orders.length - 1; i >= 0; i--) {
+                    if (Math.random() < fillProb) {
+                        const order = orders[i];
+                        this.processOrderFill(order);
+                        orders.splice(i, 1);
+                    }
+                }
+            }
+            
+            // FIXED: Accurate order fill processing with cash tracking
+            processOrderFill(order) {
+                const fillPrice = order.price;
+                
+                if (order.side === 'yesBid') {
+                    // We're buying YES shares
+                    this.yesShares += order.size;
+                    this.cashPosition -= order.size * fillPrice; // Track cash spent
+                    this.logActivity(`HIT: Bought ${order.size} YES @ ${(fillPrice*100).toFixed(1)}¢`, 'buy');
+                } else if (order.side === 'yesAsk') {
+                    // We're selling YES shares (only if we have them)
+                    if (this.yesShares >= order.size) {
+                        this.yesShares -= order.size;
+                        this.cashPosition += order.size * fillPrice; // Track cash received
+                        this.logActivity(`HIT: Sold ${order.size} YES @ ${(fillPrice*100).toFixed(1)}¢`, 'sell');
+                    } else {
+                        // Can't sell what we don't have - skip this fill silently
+                        return;
+                    }
+                } else if (order.side === 'noBid') {
+                    // We're buying NO shares
+                    this.noShares += order.size;
+                    this.cashPosition -= order.size * fillPrice;
+                    this.logActivity(`HIT: Bought ${order.size} NO @ ${(fillPrice*100).toFixed(1)}¢`, 'buy');
+                } else if (order.side === 'noAsk') {
+                    // We're selling NO shares (only if we have them)
+                    if (this.noShares >= order.size) {
+                        this.noShares -= order.size;
+                        this.cashPosition += order.size * fillPrice;
+                        this.logActivity(`HIT: Sold ${order.size} NO @ ${(fillPrice*100).toFixed(1)}¢`, 'sell');
+                    } else {
+                        // Can't sell what we don't have - skip this fill silently
+                        return;
+                    }
+                }
+                
+                this.totalRounds += 0.5;
+                this.markOrderFilledInBook(order);
+            }
+            
+            attemptRebalancing() {
+                const shareImbalance = this.yesShares - this.noShares;
+                
+                if (Math.abs(shareImbalance) > 6) {
+                    const rebalanceSize = 2;
+                    const halfSpread = this.spread / 2;
+                    
+                    const failProbability = this.adverseSelectionActive ? 0.6 : 0.2;
+                    
+                    if (Math.random() < failProbability) {
+                        this.logActivity(`❌ REBALANCE FAILED: Market moving too fast`, 'failed');
+                        return;
+                    }
+                    
+                    if (shareImbalance > 0) {
+                        // Too many YES shares - place aggressive YES ask to sell
+                        const yesAskPrice = this.yesPrice + halfSpread - 0.002; // Slightly inside spread
+                        this.placeOrder('yesAsk', yesAskPrice, rebalanceSize);
+                        this.logActivity(`🔄 REBALANCE: Added YES ask for ${rebalanceSize} @ ${(yesAskPrice*100).toFixed(1)}¢`, 'rebalance');
+                        
+                        // Also add NO bid to balance exposure
+                        const noBidPrice = this.noPrice - halfSpread + 0.001;
+                        this.placeOrder('noBid', noBidPrice, rebalanceSize);
+                        this.logActivity(`🔄 REBALANCE: Added NO bid for ${rebalanceSize} @ ${(noBidPrice*100).toFixed(1)}¢`, 'rebalance');
+                    } else {
+                        // Too many NO shares - place aggressive NO ask to sell
+                        const noAskPrice = this.noPrice + halfSpread - 0.002; // Slightly inside spread
+                        this.placeOrder('noAsk', noAskPrice, rebalanceSize);
+                        this.logActivity(`🔄 REBALANCE: Added NO ask for ${rebalanceSize} @ ${(noAskPrice*100).toFixed(1)}¢`, 'rebalance');
+                        
+                        // Also add YES bid to balance exposure
+                        const yesBidPrice = this.yesPrice - halfSpread + 0.001;
+                        this.placeOrder('yesBid', yesBidPrice, rebalanceSize);
+                        this.logActivity(`🔄 REBALANCE: Added YES bid for ${rebalanceSize} @ ${(yesBidPrice*100).toFixed(1)}¢`, 'rebalance');
+                    }
+                }
+            }
+            
+            getFillProbability() {
+                const probs = {
+                    'pregame': 0.15,
+                    'early': 0.12,
+                    'midgame': 0.10,
+                    'late': 0.15,
+                    'final': 0.08
+                };
+                return probs[this.gamePhase] || 0.10;
+            }
+            
+            calculateNetExposure() {
+                const yankeeWinValue = (this.yesShares * 1.0) + (this.noShares * 0.0);
+                const redSoxWinValue = (this.yesShares * 0.0) + (this.noShares * 1.0);
+                return yankeeWinValue - redSoxWinValue;
+            }
+            
+            calculateInventoryValue() {
+                return (this.yesShares * this.yesPrice) + (this.noShares * this.noPrice);
+            }
+            
+            updateOrderBookWithOurOrders() {
+                for (let i = 0; i < this.orderBook.bids.length; i++) {
+                    this.orderBook.bids[i].isOurs = false;
+                    this.orderBook.asks[i].isOurs = false;
+                }
+                
+                const halfSpread = this.spread / 2;
+                const ourBidPrice = this.yesPrice - halfSpread;
+                const ourAskPrice = this.yesPrice + halfSpread;
+                const tolerance = 0.005;
+                
+                for (let i = 0; i < this.orderBook.bids.length; i++) {
+                    if (Math.abs(this.orderBook.bids[i].price - ourBidPrice) < tolerance) {
+                        this.orderBook.bids[i].isOurs = true;
+                        this.orderBook.bids[i].size = this.getTotalOrderSize('yesBids') + this.getTotalOrderSize('noBids');
+                    }
+                }
+                
+                for (let i = 0; i < this.orderBook.asks.length; i++) {
+                    if (Math.abs(this.orderBook.asks[i].price - ourAskPrice) < tolerance) {
+                        this.orderBook.asks[i].isOurs = true;
+                        this.orderBook.asks[i].size = this.getTotalOrderSize('yesAsks') + this.getTotalOrderSize('noAsks');
+                    }
+                }
+            }
+            
+            getTotalOrderSize(orderType) {
+                return this.ourOrders[orderType].reduce((sum, order) => sum + order.size, 0);
+            }
+            
+            markOrderFilledInBook(filledOrder) {
+                const targetPrice = filledOrder.price;
+                
+                if (filledOrder.side.includes('Bid')) {
+                    for (let i = 0; i < this.orderBook.bids.length; i++) {
+                        if (Math.abs(this.orderBook.bids[i].price - targetPrice) < 0.002) {
+                            this.orderBook.bids[i].filled = true;
+                            setTimeout(() => this.orderBook.bids[i].filled = false, 1000);
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < this.orderBook.asks.length; i++) {
+                        if (Math.abs(this.orderBook.asks[i].price - targetPrice) < 0.002) {
+                            this.orderBook.asks[i].filled = true;
+                            setTimeout(() => this.orderBook.asks[i].filled = false, 1000);
+                        }
+                    }
+                }
+            }
+            
+            logActivity(message, type) {
+                const time = this.formatGameTime();
+                this.activityLog.unshift({ message, type, time });
+                if (this.activityLog.length > 50) this.activityLog.pop();
+            }
+            
+            formatGameTime() {
+                const minutes = Math.floor(this.gameTime * 240);
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return `${hours}:${mins.toString().padStart(2, '0')}`;
+            }
+            
+            updateAllDisplays() {
+                this.updateScoreboard();
+                this.updatePriceChart();
+                this.updateOrderBook();
+                this.updatePositionSummary();
+                this.updatePnLTracking();
+                this.updateActivityLog();
+                this.updateGameStatus();
+                this.updateRiskIndicators();
+            }
+            
+            updateRiskIndicators() {
+                const inventoryRisk = document.getElementById('inventoryRisk');
+                const adverseSelection = document.getElementById('adverseSelection');
+                const inventoryText = document.getElementById('inventoryText');
+                const adverseText = document.getElementById('adverseText');
+                
+                // Update inventory indicator
+                if (this.inventoryRiskPeriod) {
+                    inventoryRisk.classList.add('active');
+                    inventoryText.textContent = '⚠️ Inventory imbalance - rebalancing active';
+                } else {
+                    inventoryRisk.classList.remove('active');
+                    inventoryText.textContent = '📊 Inventory balanced';
+                }
+                
+                // Update adverse selection indicator
+                if (this.adverseSelectionActive) {
+                    adverseSelection.classList.add('active');
+                    adverseText.textContent = '🚨 Adverse selection - spread widening';
+                } else {
+                    adverseSelection.classList.remove('active');
+                    adverseText.textContent = '✅ Market conditions normal';
+                }
+            }
+            
+            updateScoreboard() {
+                const yankeesEl = document.getElementById('yankeesScore');
+                const redSoxEl = document.getElementById('redSoxScore');
+                
+                yankeesEl.textContent = `Yankees ${this.yankeesScore}`;
+                redSoxEl.textContent = `Red Sox ${this.redSoxScore}`;
+                
+                yankeesEl.className = 'team-score' + (this.yankeesScore > this.redSoxScore ? ' winning-team' : '');
+                redSoxEl.className = 'team-score' + (this.redSoxScore > this.yankeesScore ? ' winning-team' : '');
+            }
+            
+            updatePriceChart() {
+                const svg = document.getElementById('chartSvg');
+                const width = svg.clientWidth || 400;
+                const height = svg.clientHeight || 140;
+                
+                if (this.priceHistory.length < 2) return;
+                
+                const padding = 20;
+                const chartWidth = width - (padding * 2);
+                const chartHeight = height - (padding * 2);
+                
+                // Keep full history, map to full chart width
+                let pathData = '';
+                let areaData = '';
+                
+                this.priceHistory.forEach((point, index) => {
+                    // Map time to full chart width (0 to 1 game time)
+                    const x = padding + (point.time * chartWidth);
+                    // Map price with better scaling (20% to 80% of chart height)
+                    const normalizedPrice = (point.price - 0.2) / 0.6; // Scale 0.2-0.8 range to 0-1
+                    const y = padding + chartHeight - (Math.max(0, Math.min(1, normalizedPrice)) * chartHeight);
+                    
+                    const command = index === 0 ? 'M' : 'L';
+                    pathData += command + x + ',' + y;
+                    
+                    // Create area fill data
+                    if (index === 0) {
+                        areaData = `M${x},${padding + chartHeight} L${x},${y}`;
+                    } else {
+                        areaData += ` L${x},${y}`;
+                    }
+                });
+                
+                // Close the area path
+                if (this.priceHistory.length > 0) {
+                    const lastPoint = this.priceHistory[this.priceHistory.length - 1];
+                    const lastX = padding + (lastPoint.time * chartWidth);
+                    areaData += ` L${lastX},${padding + chartHeight} Z`;
+                }
+                
+                // Add grid lines for better readability
+                let gridLines = '';
+                for (let i = 1; i <= 4; i++) {
+                    const y = padding + (i * chartHeight / 5);
+                    gridLines += `<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="2,2"/>`;
+                }
+                
+                // Add price labels
+                let priceLabels = '';
+                for (let i = 0; i <= 4; i++) {
+                    const price = 0.8 - (i * 0.15); // 80%, 65%, 50%, 35%, 20%
+                    const y = padding + (i * chartHeight / 4) + 4;
+                    priceLabels += `<text x="${padding - 5}" y="${y}" fill="#9ca3af" font-size="10" text-anchor="end" font-family="Monaco, monospace">${(price * 100).toFixed(0)}%</text>`;
+                }
+                
+                svg.innerHTML = `
+                    <defs>
+                        <linearGradient id="priceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#0ea5e9;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:0.3" />
+                            <stop offset="50%" style="stop-color:#0ea5e9;stop-opacity:0.2" />
+                            <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.1" />
+                        </linearGradient>
+                    </defs>
+                    ${gridLines}
+                    ${priceLabels}
+                    <path fill="url(#areaGradient)" d="${areaData}" />
+                    <path class="chart-line" d="${pathData}" />
+                    <circle cx="${padding + (this.gameTime * chartWidth)}" cy="${padding + chartHeight - ((this.yesPrice - 0.2) / 0.6 * chartHeight)}" r="3" fill="#0ea5e9" stroke="#ffffff" stroke-width="2">
+                        <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                `;
+            }
+            
+            updateOrderBook() {
+                const askBook = document.getElementById('askBook');
+                const bidBook = document.getElementById('bidBook');
+                
+                askBook.innerHTML = this.orderBook.asks.slice(0, 5).reverse().map(order => `
+                    <div class="book-row ask-row ${order.isOurs ? 'our-order' : ''} ${order.filled ? 'filled-order' : ''} ${order.pickedOff ? 'picked-off' : ''}">
+                        <span>${(order.price * 100).toFixed(1)}¢</span>
+                        <span>${order.size}</span>
+                    </div>
+                `).join('');
+                
+                bidBook.innerHTML = this.orderBook.bids.slice(0, 5).map(order => `
+                    <div class="book-row bid-row ${order.isOurs ? 'our-order' : ''} ${order.filled ? 'filled-order' : ''} ${order.pickedOff ? 'picked-off' : ''}">
+                        <span>${(order.price * 100).toFixed(1)}¢</span>
+                        <span>${order.size}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('currentSpread').textContent = (this.spread * 100).toFixed(1) + '¢';
+                document.getElementById('spreadDisplay').textContent = (this.spread * 100).toFixed(1) + '¢';
+                document.getElementById('midPrice').textContent = (this.yesPrice * 100).toFixed(1) + '¢';
+            }
+            
+            updatePositionSummary() {
+                const netExposure = this.calculateNetExposure();
+                const deltaStatus = document.getElementById('deltaStatus');
+                
+                if (Math.abs(netExposure) < 2) {
+                    deltaStatus.textContent = 'DELTA NEUTRAL ✅';
+                    deltaStatus.className = 'delta-status delta-neutral';
+                } else if (Math.abs(netExposure) < 5) {
+                    deltaStatus.textContent = `MODERATE EXPOSURE ⚠️`;
+                    deltaStatus.className = 'delta-status delta-risk';
+                } else {
+                    deltaStatus.textContent = `HIGH EXPOSURE 🚨`;
+                    deltaStatus.className = 'delta-status delta-danger';
+                }
+                
+                document.getElementById('yesShares').textContent = this.yesShares;
+                document.getElementById('noShares').textContent = this.noShares;
+                
+                // FIXED: Show cash position
+                const cashEl = document.getElementById('cashPosition');
+                cashEl.textContent = '$' + this.cashPosition.toFixed(2);
+                cashEl.className = 'metric-value ' + (this.cashPosition >= 0 ? 'positive' : 'negative');
+                
+                const queueText = this.queuePosition === 1 ? 'Top of book' : `${this.queuePosition} back`;
+                document.getElementById('queuePosition').textContent = queueText;
+                
+                // FIXED: Delta-neutral proof with cash position
+                const yankeeWinPayout = (this.yesShares * 1.00) + (this.noShares * 0.00) + this.cashPosition;
+                const redSoxWinPayout = (this.yesShares * 0.00) + (this.noShares * 1.00) + this.cashPosition;
+                
+                document.getElementById('yankeeWinScenario').textContent = '$' + yankeeWinPayout.toFixed(2);
+                document.getElementById('redSoxWinScenario').textContent = '$' + redSoxWinPayout.toFixed(2);
+                
+                const payoutDifference = Math.abs(yankeeWinPayout - redSoxWinPayout);
+                const deltaProofEl = document.getElementById('deltaProofStatus');
+                
+                if (payoutDifference < 0.10) {
+                    deltaProofEl.textContent = `✅ PERFECTLY DELTA NEUTRAL (Δ$${payoutDifference.toFixed(2)})`;
+                    deltaProofEl.style.color = '#10b981';
+                } else if (payoutDifference < 1.00) {
+                    deltaProofEl.textContent = `⚠️ NEARLY NEUTRAL (Δ$${payoutDifference.toFixed(2)})`;
+                    deltaProofEl.style.color = '#f59e0b';
+                } else {
+                    deltaProofEl.textContent = `🚨 EXPOSURE RISK (Δ$${payoutDifference.toFixed(2)})`;
+                    deltaProofEl.style.color = '#ef4444';
+                }
+                
+                const yankeeEl = document.getElementById('yankeeWinScenario');
+                const redSoxEl = document.getElementById('redSoxWinScenario');
+                
+                yankeeEl.className = 'metric-value ' + (yankeeWinPayout >= 0 ? 'positive' : 'negative');
+                redSoxEl.className = 'metric-value ' + (redSoxWinPayout >= 0 ? 'positive' : 'negative');
+            }
+            
+            // FIXED: P&L tracking with cash position and mark-to-market
+            updatePnLTracking() {
+                document.getElementById('totalRounds').textContent = this.totalRounds.toFixed(1);
+                
+                // Show trading P&L (cash position)
+                const tradingPnLEl = document.getElementById('tradingPnL');
+                tradingPnLEl.textContent = '$' + this.cashPosition.toFixed(2);
+                tradingPnLEl.className = 'metric-value ' + (this.cashPosition >= 0 ? 'positive' : 'negative');
+                
+                // Calculate mark-to-market value
+                const mtmValue = (this.yesShares * this.yesPrice) + (this.noShares * this.noPrice);
+                const mtmEl = document.getElementById('markToMarket');
+                mtmEl.textContent = '$' + mtmValue.toFixed(2);
+                mtmEl.className = 'metric-value ' + (mtmValue >= 0 ? 'positive' : 'negative');
+                
+                // Calculate unrealized P&L
+                const unrealizedPnL = mtmValue + this.cashPosition;
+                const unrealizedEl = document.getElementById('unrealizedPnL');
+                unrealizedEl.textContent = '$' + unrealizedPnL.toFixed(2);
+                unrealizedEl.className = 'metric-value ' + (unrealizedPnL >= 0 ? 'positive' : 'negative');
+                
+                // Total P&L is the same as unrealized for now
+                const totalEl = document.getElementById('totalPnL');
+                totalEl.textContent = '$' + unrealizedPnL.toFixed(2);
+                totalEl.className = 'metric-value ' + (unrealizedPnL >= 0 ? 'positive' : 'negative');
+                
+                const currentEvent = this.gameEvents[Math.max(0, this.nextEventIndex - 1)];
+                const inning = currentEvent?.inning || 'Pre-Game';
+                document.getElementById('currentInning').textContent = inning;
+                
+            }
+            
+            updateActivityLog() {
+                const logEl = document.getElementById('activityLog');
+                logEl.innerHTML = this.activityLog.map(item => `
+                    <div class="activity-item">
+                        <span class="${item.type}-action">${item.message}</span>
+                        <span class="activity-time">${item.time}</span>
+                    </div>
+                `).join('');
+            }
+            
+            updateGameStatus() {
+                const progress = this.gameTime * 100;
+                document.getElementById('gameProgress').style.width = progress + '%';
+                
+                const phases = {
+                    'pregame': 'Pre-game',
+                    'early': 'Early innings',
+                    'midgame': 'Mid-game',
+                    'late': 'Late innings',
+                    'final': 'Game over'
+                };
+                
+                const status = `${phases[this.gamePhase]} • Yankees ${(this.yesPrice*100).toFixed(1)}% • Spread ${(this.spread*100).toFixed(1)}¢`;
+                document.getElementById('gameStatus').textContent = status;
+            }
+            
+            start() {
+                this.isRunning = true;
+                this.animate();
+            }
+            
+            pause() {
+                this.isRunning = false;
+            }
+            
+            reset() {
+                this.gameTime = 0;
+                this.yankeesScore = 0;
+                this.redSoxScore = 0;
+                this.gamePhase = 'pregame';
+                this.nextEventIndex = 0;
+                this.yesShares = 0;
+                this.noShares = 0;
+                this.totalRounds = 0;
+                this.cashPosition = 0; // Reset cash position
+                this.yesPrice = 0.58;
+                this.noPrice = 0.42;
+                this.spread = 0.010;
+                this.queuePosition = 1;
+                this.lastPriceMove = 0;
+                this.priceVelocity = 0;
+                this.inventoryRiskPeriod = false;
+                this.adverseSelectionActive = false;
+                this.activityLog = [];
+                this.priceHistory = [{ time: 0, price: 0.58 }];
+                this.ourOrders = { yesBids: [], yesAsks: [], noBids: [], noAsks: [] };
+                this.initializeOrderBook();
+                this.logActivity('🏟️ Professional trading session initiated', 'game');
+                this.updateAllDisplays();
+            }
+            
+            animate() {
+                if (!this.isRunning) return;
+                
+                this.gameTime += 0.002;
+                
+                if (this.gameTime >= 1) {
+                    this.gameTime = 1;
+                    this.isRunning = false;
+                    this.finalSettlement();
+                }
+                
+                this.updateGame();
+                
+                if (this.isRunning) {
+                    setTimeout(() => this.animate(), 200);
+                }
+            }
+            
+            // FIXED: Final settlement with proper contract payouts
+            finalSettlement() {
+                const yankeesWon = this.yankeesScore > this.redSoxScore;
+                this.logActivity(`🏁 FINAL: ${yankeesWon ? 'Yankees Win!' : 'Red Sox Win!'}`, 'game');
+                
+                // Settlement: YES shares pay $1 if Yankees win, $0 if lose
+                // NO shares pay $1 if Red Sox win, $0 if lose
+                const yesSettlement = this.yesShares * (yankeesWon ? 1 : 0);
+                const noSettlement = this.noShares * (yankeesWon ? 0 : 1);
+                
+                const totalSettlement = yesSettlement + noSettlement;
+                const finalPnL = this.cashPosition + totalSettlement;
+                
+                // Add settlement details to activity log
+                if (yankeesWon) {
+                    this.logActivity(`💰 SETTLEMENT: YES shares pay $1.00 each, NO shares pay $0.00`, 'game');
+                } else {
+                    this.logActivity(`💰 SETTLEMENT: YES shares pay $0.00 each, NO shares pay $1.00`, 'game');
+                }
+                this.logActivity(`💰 Settlement payout: $${totalSettlement.toFixed(2)} (${this.yesShares} YES + ${this.noShares} NO)`, 'game');
+                this.logActivity(`💰 FINAL P&L: $${finalPnL.toFixed(2)} (Trading: $${this.cashPosition.toFixed(2)} + Settlement: $${totalSettlement.toFixed(2)})`, 'game');
+                this.updateAllDisplays();
+            }
+        }
+
+        let simulation = new TrueMarketMakerDynamics();
+        
+        function startSimulation() { 
+            console.log('Start button clicked');
+            simulation.start(); 
+        }
+        function pauseSimulation() { 
+            console.log('Pause button clicked');
+            simulation.pause(); 
+        }
+        function resetSimulation() { 
+            console.log('Reset button clicked');
+            simulation.reset(); 
+        }
+        
+        window.startSimulation = startSimulation;
+        window.pauseSimulation = pauseSimulation;
+        window.resetSimulation = resetSimulation;
+        
+        simulation.updateAllDisplays();
+    </script>
+</body>
+</html>
